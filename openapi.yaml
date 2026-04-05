@@ -1,0 +1,87 @@
+openapi: 3.0.0
+info:
+  title: Market Snapshot API
+  description: Real-time stock market data API with authentication, caching, and usage tracking.
+  version: 2.0.0
+
+servers:
+  - url: https://market-snapshot-api.onrender.com
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+
+  /quote:
+    get:
+      summary: Get stock quote
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: query
+          name: ticker
+          required: true
+          schema:
+            type: string
+          example: AAPL
+      responses:
+        '200':
+          description: Stock quote data
+
+  /watchlist:
+    get:
+      summary: Get multiple stock quotes
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: query
+          name: tickers
+          required: true
+          schema:
+            type: string
+          example: AAPL,MSFT,TSLA
+      responses:
+        '200':
+          description: Watchlist data
+
+  /me:
+    get:
+      summary: Get API key usage info
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Usage info
+
+  /admin/create-key:
+    post:
+      summary: Create API key
+      parameters:
+        - in: header
+          name: x-admin-secret
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plan:
+                  type: string
+                  example: free
+      responses:
+        '200':
+          description: API key created
