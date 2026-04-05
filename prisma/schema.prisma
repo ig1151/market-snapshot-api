@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ApiKey {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  plan      String   @default("free")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  usage     Usage[]
+}
+
+model Usage {
+  id        Int      @id @default(autoincrement())
+  apiKeyId  String
+  endpoint  String
+  timestamp DateTime @default(now())
+
+  apiKey    ApiKey   @relation(fields: [apiKeyId], references: [id])
+
+  @@index([apiKeyId, timestamp])
+}

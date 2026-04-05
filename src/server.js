@@ -1,0 +1,67 @@
+"use strict";
+require("dotenv").config();
+
+const express = require("express");
+const helmet = require("helmet");
+const cors = require("cors");
+const morgan = require("morgan");
+
+const healthRoute = require("./routes/health");
+const quoteRoute = require("./routes/quote");
+const watchlistRoute = require("./routes/watchlist");
+const marketStatusRoute = require("./routes/marketStatus");
+const meRoute = require("./routes/me");
+const adminRoute = require("./routes/admin");
+
+const { apiKeyMiddleware } = require("./middleware/apiKey");
+const { planLimiter } = require("./middleware/planLimiter");
+const { rateLimiter } = require("./middleware/rateLimiter");
+const { errorHandler, notFound } = require("./middleware/errorHandler");
+
+const app = express();
+
+if (!process.env.ADMIN_SECRET) {
+  console.warn("[WARNING] ADMIN_SECRET is not set - admin routes are unsecured");
+}
+
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+app.use(morgan("dev"));
+
+app.get("/", (_req, res) => {
+  res.json({
+    success: true,
+    data: {
+      name: "market-snapshot-api",
+      version: "2.0.0",
+      endpoints: [
+        "/health",
+        "/quote?ticker=AAPL",
+        "/watchlist?tickers=AAPL,MSFT",
+        "/market-status",
+        "/me"
+      ]
+    }
+  });
+});
+
+app.use("/health", healthRoute);
+app.use("/admin", adminRoute);
+
+app.use(apiKeyMiddleware);
+app.use(planLimiter);
+app.use(rateLimiter);
+
+app.use("/me", meRoute);
+app.use("/quote", quoteRoute);
+app.use("/watchlist", watchlistRoute);
+app.use("/market-status", marketStatusRoute);
+
+app.use(notFound);
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`[market-snapshot-api] running on http://localhost:${PORT}`));
+
+module.exports = app;
