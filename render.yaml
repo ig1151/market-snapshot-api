@@ -3,8 +3,8 @@ services:
     name: market-snapshot-api
     env: node
     plan: free
-    buildCommand: npm install && npx prisma migrate deploy
-    startCommand: npm start
+    buildCommand: npm install
+    startCommand: npx prisma db push && npm start
     healthCheckPath: /health
     envVars:
       - key: PORT
