@@ -1,72 +1,98 @@
-# 📈 Market Snapshot API
+📊 Market Snapshot API
 
-A production-ready REST API for real-time stock data, watchlists, and global market status — built for fintech apps, dashboards, and AI agents.
+A fast, production-ready REST API for retrieving real-time stock market data with API key authentication, usage tracking, and rate limiting.
 
-## Features
+🚀 Features
+🔑 API key authentication
+📈 Real-time stock quotes (powered by Twelve Data)
+📊 Watchlist endpoint (multiple tickers)
+📉 Usage tracking & rate limiting
+⚡ Response caching (TTL-based)
+🛠 Production-ready deployment (Render + PostgreSQL)
+🌐 Base URL
+https://market-snapshot-api.onrender.com
+🔐 Authentication
 
-- Real-time stock quotes
-- Batch watchlist endpoint
-- Global market status
-- API key authentication
-- Usage tracking per key
-- Plan-based rate limiting
-- Clean JSON responses
-- Deploy-ready for Render + PostgreSQL
+All protected endpoints require an API key:
 
-## Endpoints
-
-### Public
-- `GET /`
-- `GET /health`
-
-### Auth Required (`x-api-key`)
-- `GET /quote?ticker=AAPL`
-- `GET /watchlist?tickers=AAPL,MSFT`
-- `GET /market-status`
-- `GET /me`
-
-### Admin
-- `POST /admin/create-key`
-- `POST /admin/revoke-key`
-
-## Quick Start
-
-```bash
-cp .env.example .env
-npm install
-npx prisma migrate dev --name init
-npm run db:seed
-npm run dev
-```
-
-## Example Requests
-
-```bash
-curl http://localhost:3000/health
-
-curl -X POST http://localhost:3000/admin/create-key \
+x-api-key: YOUR_API_KEY
+📌 Endpoints
+Health Check
+GET /health
+Get Quote
+GET /quote?ticker=AAPL
+Example:
+curl "https://market-snapshot-api.onrender.com/quote?ticker=AAPL" \
+  -H "x-api-key: YOUR_API_KEY"
+Response:
+{
+  "success": true,
+  "data": {
+    "ticker": "AAPL",
+    "price": 255.92,
+    "open": 254.2,
+    "high": 256.13,
+    "low": 250.65,
+    "previousClose": 255.63,
+    "change": 0.29,
+    "changePct": "0.11%",
+    "volume": 31289400,
+    "latestTradingDay": "2026-04-02"
+  }
+}
+Watchlist (Multiple Tickers)
+GET /watchlist?tickers=AAPL,MSFT,TSLA
+Example:
+curl "https://market-snapshot-api.onrender.com/watchlist?tickers=AAPL,MSFT,TSLA" \
+  -H "x-api-key: YOUR_API_KEY"
+Account Info
+GET /me
+Example:
+curl https://market-snapshot-api.onrender.com/me \
+  -H "x-api-key: YOUR_API_KEY"
+🔑 Admin Endpoints
+Create API Key
+POST /admin/create-key
+Example:
+curl -X POST https://market-snapshot-api.onrender.com/admin/create-key \
   -H "Content-Type: application/json" \
+  -H "x-admin-secret: YOUR_ADMIN_SECRET" \
   -d '{"plan":"free"}'
+⚙️ Environment Variables
+MARKET_API_KEY=your_twelve_data_api_key
+ADMIN_SECRET=your_admin_secret
+RATE_LIMIT_RPM=60
+🧠 Architecture
+Backend: Node.js (Express)
+Database: PostgreSQL (Render)
+ORM: Prisma
+Market Data Provider: Twelve Data
+Hosting: Render
+Caching: In-memory TTL cache
+⚡ Rate Limits
+Default: 60 requests per minute per API key
+Controlled via RATE_LIMIT_RPM
+🧪 Local Development
+npm install
+npm run dev
+📦 Deployment
 
-curl "http://localhost:3000/quote?ticker=IBM" \
-  -H "x-api-key: YOUR_KEY"
+This project is deployed using Render Blueprints.
 
-curl "http://localhost:3000/me" \
-  -H "x-api-key: YOUR_KEY"
-```
-
-## Deployment
-
-Use Render Blueprint deployment with the included `render.yaml`.
-
-Required environment variables:
-- `MARKET_API_KEY`
-- `ADMIN_SECRET`
-
-## Notes
-
-This project uses Alpha Vantage by default. For larger scale, consider upgrading the upstream provider and replacing the in-memory cache with Redis.
-
-## License
+💰 Use Cases
+Trading dashboards
+Financial apps
+Stock tracking tools
+SaaS APIs
+Developer integrations
+⚠️ Notes
+Data is sourced from Twelve Data
+Free tier usage depends on upstream provider limits
+Cached responses reduce API usage and improve speed
+📜 License
 
 MIT
+
+🙌 Author
+
+Built as a production-ready financial data API.
