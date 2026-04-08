@@ -17,6 +17,7 @@ const { apiKeyMiddleware } = require("./middleware/apiKey");
 const { planLimiter } = require("./middleware/planLimiter");
 const { rateLimiter } = require("./middleware/rateLimiter");
 const { errorHandler, notFound } = require("./middleware/errorHandler");
+const registerRoute = require("./routes/register");
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/health", healthRoute);
+app.use("/register", registerRoute);
 app.use("/admin", adminRoute);
 
 app.use(apiKeyMiddleware);
