@@ -1,115 +1,74 @@
 "use strict";
-
 const https = require("https");
 
-const TD_BASE = "https://api.twelvedata.com";
+const BASE = "https://api.twelvedata.com";
+const KEY  = () => process.env.TWELVE_DATA_API_KEY || "";
 
-/**
- * Small HTTPS JSON helper
- */
-function httpGet(url) {
+function get(path) {
   return new Promise((resolve, reject) => {
-    https
-      .get(url, (res) => {
-        let raw = "";
-
-        res.on("data", (chunk) => {
-          raw += chunk;
-        });
-
-        res.on("end", () => {
-          try {
-            resolve(JSON.parse(raw));
-          } catch (_err) {
-            reject(new Error("Failed to parse upstream response"));
-          }
-        });
-      })
-      .on("error", reject);
+    https.get(`${BASE}${path}&apikey=${KEY()}`, res => {
+      let raw = "";
+      res.on("data", c => raw += c);
+      res.on("end", () => {
+        try { resolve(JSON.parse(raw)); }
+        catch { reject(new Error("Invalid JSON from Twelve Data")); }
+      });
+    }).on("error", reject);
   });
 }
 
-function getApiKey() {
-  return process.env.MARKET_API_KEY || "";
-}
-
-/**
- * Twelve Data error shape:
- * {
- *   code: 400,
- *   message: "...",
- *   status: "error"
- * }
- */
-function handleTwelveDataError(json, ticker) {
-  if (json && json.status === "error") {
-    const message = json.message || "Upstream provider returned an error";
-    const code = Number(json.code);
-
-    const err = new Error(message);
-
-    if (code === 400 || code === 404) {
-      err.status = 404;
-    } else if (code === 401 || code === 403) {
-      err.status = 401;
-    } else if (code === 429) {
-      err.status = 429;
-    } else {
-      err.status = 502;
-    }
-
-    throw err;
-  }
-
-  if (!json || !json.symbol) {
-    const err = new Error(`No data found for ticker "${ticker}"`);
-    err.status = 404;
-    throw err;
-  }
-}
-
-function normalizeQuote(q, requestedTicker) {
-  return {
-    ticker: q.symbol || requestedTicker,
-    price: q.close != null ? parseFloat(q.close) : null,
-    open: q.open != null ? parseFloat(q.open) : null,
-    high: q.high != null ? parseFloat(q.high) : null,
-    low: q.low != null ? parseFloat(q.low) : null,
-    previousClose: q.previous_close != null ? parseFloat(q.previous_close) : null,
-    change: q.change != null ? parseFloat(q.change) : null,
-    changePct: q.percent_change != null ? `${q.percent_change}%` : null,
-    volume: q.volume != null ? parseInt(q.volume, 10) : null,
-    latestTradingDay: q.datetime || null,
-  };
-}
-
 async function getQuote(ticker) {
-  const apiKey = getApiKey();
-
-  if (!apiKey) {
-    const err = new Error("MARKET_API_KEY is not configured");
-    err.status = 500;
-    throw err;
-  }
-
-  const url = `${TD_BASE}/quote?symbol=${encodeURIComponent(ticker)}&apikey=${encodeURIComponent(apiKey)}`;
-  const json = await httpGet(url);
-
-  handleTwelveDataError(json, ticker);
-
-  return normalizeQuote(json, ticker);
-}
-
-/**
- * Placeholder for now so the existing route does not break.
- */
-async function getMarketStatus() {
+  const d = await get(`/quote?symbol=${ticker}`);
+  if (d.status === "error" || d.code) throw new Error(d.message || "Ticker not found");
   return {
-    provider: "Twelve Data",
-    status: "not implemented",
-    message: "Market status is not implemented for Twelve Data in this version.",
-    asOf: new Date().toISOString(),
+    ticker:           d.symbol,
+    name:             d.name,
+    exchange:         d.exchange,
+    price:            parseFloat(d.close),
+    open:             parseFloat(d.open),
+    high:             parseFloat(d.high),
+    low:              parseFloat(d.low),
+    previousClose:    parseFloat(d.previous_close),
+    change:           parseFloat(d.change),
+    changePct:        d.percent_change + "%",
+    volume:           parseInt(d.volume),
+    latestTradingDay: d.datetime,
+    isMarketOpen:     d.is_market_open,
   };
 }
 
-module.exports = { getQuote, getMarketStatus };
+async function getWatchlist(tickers) {
+  const symbols = tickers.slice(0, 20).join(",");
+  const d = await get(`/quote?symbol=${symbols}`);
+  const entries = tickers.length === 1
+    ? [[tickers[0], d]]
+    : Object.entries(d);
+  return entries
+    .filter(([, v]) => v && !v.code)
+    .map(([, v]) => ({
+      ticker:       v.symbol,
+      name:         v.name,
+      price:        parseFloat(v.close),
+      change:       parseFloat(v.change),
+      changePct:    v.percent_change + "%",
+      isMarketOpen: v.is_market_open,
+    }));
+}
+
+async function getMarketStatus() {
+  const d = await get(`/market_state?`);
+  const markets = Array.isArray(d) ? d : [d];
+  const major = ["NASDAQ", "NYSE", "LSE", "TSX", "EUREX", "ASX"];
+  return markets
+    .filter(m => major.includes(m.name) || major.includes(m.code))
+    .map(m => ({
+      exchange:      m.code,
+      name:          m.name,
+      country:       m.country,
+      timeToOpen:    m.time_to_open,
+      timeToClose:   m.time_to_close,
+      currentStatus: m.is_market_open ? "open" : "closed",
+    }));
+}
+
+module.exports = { getQuote, getWatchlist, getMarketStatus };
