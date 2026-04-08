@@ -1,4 +1,28 @@
 "use strict";
+/**
+ * @swagger
+ * /quote:
+ *   get:
+ *     summary: Get a real-time stock quote
+ *     tags: [Quotes]
+ *     parameters:
+ *       - in: query
+ *         name: ticker
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: AAPL
+ *         description: Stock ticker symbol (e.g. AAPL, MSFT, TSLA)
+ *     responses:
+ *       200:
+ *         description: Real-time quote data
+ *       400:
+ *         description: Invalid ticker
+ *       401:
+ *         description: Invalid or missing API key
+ *       429:
+ *         description: Rate limit exceeded
+ */
 const router = require("express").Router();
 const { getQuote } = require("../services/marketService");
 const { validateTicker } = require("../utils/validate");

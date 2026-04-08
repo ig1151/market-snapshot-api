@@ -1,4 +1,18 @@
 "use strict";
+/**
+ * @swagger
+ * /market-status:
+ *   get:
+ *     summary: Get open/closed status for major global exchanges
+ *     tags: [Markets]
+ *     responses:
+ *       200:
+ *         description: List of exchanges with open/closed status
+ *       401:
+ *         description: Invalid or missing API key
+ *       429:
+ *         description: Rate limit exceeded
+ */
 const router = require("express").Router();
 const { getMarketStatus } = require("../services/marketService");
 const { getCache, setCache } = require("../utils/cache");
