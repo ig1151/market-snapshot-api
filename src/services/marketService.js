@@ -92,4 +92,70 @@ async function getChart(ticker, interval = "1day", periods = 30) {
     })),
   };
 }
-module.exports = { getQuote, getWatchlist, getMarketStatus, getChart };
+async function searchTickers(query) {
+  const d = await get(`/symbol_search?symbol=${encodeURIComponent(query)}`);
+  if (d.status === "error" || d.code) throw new Error(d.message || "Search failed");
+  const results = d.data ?? [];
+  return results
+    .filter(r => r.instrument_type === "Common Stock")
+    .slice(0, 10)
+    .map(r => ({
+      symbol: r.symbol,
+      name: r.instrument_name,
+      exchange: r.exchange,
+      country: r.country,
+      currency: r.currency,
+      type: r.instrument_type,
+    }));
+}
+async function getFundamentals(ticker) {
+  const d = await get(`/statistics?symbol=${ticker}`);
+  if (d.status === "error" || d.code) throw new Error(d.message || "Ticker not found");
+  const s = d.statistics;
+  return {
+    ticker: d.meta?.symbol ?? ticker,
+    name: d.meta?.name,
+    exchange: d.meta?.exchange,
+    currency: d.meta?.currency,
+    valuation: {
+      market_cap: s.valuations_metrics?.market_capitalization,
+      enterprise_value: s.valuations_metrics?.enterprise_value,
+      pe_ratio: s.valuations_metrics?.trailing_pe,
+      forward_pe: s.valuations_metrics?.forward_pe,
+      peg_ratio: s.valuations_metrics?.peg_ratio,
+      price_to_sales: s.valuations_metrics?.price_to_sales_ttm,
+      price_to_book: s.valuations_metrics?.price_to_book_mrq,
+    },
+    financials: {
+      revenue_ttm: s.financials?.income_statement?.revenue_ttm,
+      gross_profit_ttm: s.financials?.income_statement?.gross_profit_ttm,
+      net_income_ttm: s.financials?.income_statement?.net_income_to_common_ttm,
+      eps_ttm: s.financials?.income_statement?.diluted_eps_ttm,
+      profit_margin: s.financials?.profit_margin,
+      operating_margin: s.financials?.operating_margin,
+      return_on_equity: s.financials?.return_on_equity_ttm,
+      operating_cash_flow: s.financials?.cash_flow?.operating_cash_flow_ttm,
+    },
+    price_summary: {
+      fifty_two_week_high: s.stock_price_summary?.fifty_two_week_high,
+      fifty_two_week_low: s.stock_price_summary?.fifty_two_week_low,
+      fifty_two_week_change: s.stock_price_summary?.fifty_two_week_change,
+      beta: s.stock_price_summary?.beta,
+      day_50_ma: s.stock_price_summary?.day_50_ma,
+      day_200_ma: s.stock_price_summary?.day_200_ma,
+    },
+    dividends: {
+      forward_dividend_rate: s.dividends_and_splits?.forward_annual_dividend_rate,
+      forward_dividend_yield: s.dividends_and_splits?.forward_annual_dividend_yield,
+      payout_ratio: s.dividends_and_splits?.payout_ratio,
+      ex_dividend_date: s.dividends_and_splits?.ex_dividend_date,
+    },
+    shares: {
+      shares_outstanding: s.stock_statistics?.shares_outstanding,
+      float_shares: s.stock_statistics?.float_shares,
+      institutional_ownership: s.stock_statistics?.percent_held_by_institutions,
+      insider_ownership: s.stock_statistics?.percent_held_by_insiders,
+    },
+  };
+}
+module.exports = { getQuote, getWatchlist, getMarketStatus, getChart, searchTickers, getFundamentals };

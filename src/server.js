@@ -11,6 +11,8 @@ const quoteRoute = require("./routes/quote");
 const watchlistRoute = require("./routes/watchlist");
 const marketStatusRoute = require("./routes/marketStatus");
 const chartRoute = require("./routes/chart");
+const searchRoute = require("./routes/search");
+const fundamentalsRoute = require("./routes/fundamentals");
 const meRoute = require("./routes/me");
 const adminRoute = require("./routes/admin");
 
@@ -62,6 +64,8 @@ app.use("/quote", quoteRoute);
 app.use("/watchlist", watchlistRoute);
 app.use("/market-status", marketStatusRoute);
 app.use("/chart", chartRoute);
+app.use("/search", searchRoute);
+app.use("/fundamentals", fundamentalsRoute);
 
 app.use(notFound);
 app.use(errorHandler);
