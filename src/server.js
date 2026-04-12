@@ -10,6 +10,7 @@ const healthRoute = require("./routes/health");
 const quoteRoute = require("./routes/quote");
 const watchlistRoute = require("./routes/watchlist");
 const marketStatusRoute = require("./routes/marketStatus");
+const chartRoute = require("./routes/chart");
 const meRoute = require("./routes/me");
 const adminRoute = require("./routes/admin");
 
@@ -60,6 +61,7 @@ app.use("/me", meRoute);
 app.use("/quote", quoteRoute);
 app.use("/watchlist", watchlistRoute);
 app.use("/market-status", marketStatusRoute);
+app.use("/chart", chartRoute);
 
 app.use(notFound);
 app.use(errorHandler);

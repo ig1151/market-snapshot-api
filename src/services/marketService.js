@@ -71,4 +71,25 @@ async function getMarketStatus() {
     }));
 }
 
-module.exports = { getQuote, getWatchlist, getMarketStatus };
+async function getChart(ticker, interval = "1day", periods = 30) {
+  const validIntervals = ["1min","5min","15min","30min","1h","2h","4h","1day","1week","1month"];
+  if (!validIntervals.includes(interval)) throw new Error(`Invalid interval. Use one of: ${validIntervals.join(", ")}`);
+  const outputSize = Math.min(Math.max(parseInt(periods), 1), 365);
+  const d = await get(`/time_series?symbol=${ticker}&interval=${interval}&outputsize=${outputSize}`);
+  if (d.status === "error" || d.code) throw new Error(d.message || "Ticker not found");
+  const values = d.values ?? [];
+  return {
+    ticker: d.meta?.symbol ?? ticker,
+    interval,
+    periods: values.length,
+    data: values.map(v => ({
+      datetime: v.datetime,
+      open: parseFloat(v.open),
+      high: parseFloat(v.high),
+      low: parseFloat(v.low),
+      close: parseFloat(v.close),
+      volume: parseInt(v.volume),
+    })),
+  };
+}
+module.exports = { getQuote, getWatchlist, getMarketStatus, getChart };
