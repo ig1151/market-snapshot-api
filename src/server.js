@@ -13,7 +13,6 @@ const marketStatusRoute = require("./routes/marketStatus");
 const meRoute = require("./routes/me");
 const adminRoute = require("./routes/admin");
 
-const { apiKeyMiddleware } = require("./middleware/apiKey");
 const { planLimiter } = require("./middleware/planLimiter");
 const { rateLimiter } = require("./middleware/rateLimiter");
 const { errorHandler, notFound } = require("./middleware/errorHandler");
@@ -55,8 +54,6 @@ app.get("/openapi.json", (req, res) => res.json(swaggerSpec));
 app.use("/register", registerRoute);
 app.use("/admin", adminRoute);
 
-app.use(apiKeyMiddleware);
-app.use(planLimiter);
 app.use(rateLimiter);
 
 app.use("/me", meRoute);
